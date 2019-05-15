@@ -3,8 +3,10 @@ using InTheHand.Net.Bluetooth;
 using InTheHand.Net.Sockets;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -23,8 +25,12 @@ namespace WpfApp1
     /// </summary>
     public partial class MainWindow : Window
     {
+
+        Guid uId = new Guid("0000110E-0000-1000-8000-00805f9b34fb");
+
         public List<string> items;
         public List<BluetoothDeviceInfo> devices;
+        BluetoothDeviceInfo device;
         public MainWindow()
         {
 
@@ -34,14 +40,12 @@ namespace WpfApp1
         }
 
         public void Refresh() {
-            items = new List<string>(); ;
+            items = new List<string>();
             BluetoothClient _cli = new BluetoothClient();
             devices = _cli.DiscoverDevicesInRange().ToList();
 
             foreach (BluetoothDeviceInfo d in devices)
             {
-
-
                 items.Add(d.DeviceName);
             }
 
@@ -49,7 +53,9 @@ namespace WpfApp1
         }
 
 
-        public void AttemptConnect(BluetoothDeviceInfo device) {
+        public void AttemptConnect()
+        {
+            device = devices[list.SelectedIndex];
             bool _isConnected = false;
 
             var serviceClass = BluetoothService.SerialPort;
@@ -57,7 +63,6 @@ namespace WpfApp1
             BluetoothClient _cli = new BluetoothClient();
             items = new List<string>();
 
-            dev.Text = device.DeviceName;
 
             //return;
 
@@ -101,7 +106,100 @@ namespace WpfApp1
 
         private void List_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            AttemptConnect(devices[list.SelectedIndex]);
+            device = devices[list.SelectedIndex];
+            dev.Text = device.DeviceName;
+            //AttemptConnect();
+
+            //UpdateStatus(deviceInfo.DeviceName + " was selected, attempting connect");
+
+            if (CanPair())
+            {
+                //UpdateStatus("Device paired..");
+                //UpdateStatus("Starting connect thread");
+
+                conn.Text = "attempting pairing...";
+                Thread senderThread = new Thread(new ThreadStart(ClientConnectThread));
+                senderThread.Start();
+            }
+            else
+            {
+                //UpdateStatus("Pair failed");
+                conn.Text = "pair failed";
+
+            }
         }
+
+
+        private bool CanPair()
+        {
+            if (!device.Authenticated)
+            {
+                if (!BluetoothSecurity.PairRequest(device.DeviceAddress, ""))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+/*
+        private void LstAvailableDevices_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            device = devices[list.SelectedIndex];
+            //UpdateStatus(deviceInfo.DeviceName + " was selected, attempting connect");
+
+            if (CanPair())
+            {
+                //UpdateStatus("Device paired..");
+                //UpdateStatus("Starting connect thread");
+
+                conn.Text = "attempting pairing...";
+                Thread senderThread = new Thread(new ThreadStart(ClientConnectThread));
+                senderThread.Start();
+            }
+            else
+            {
+                //UpdateStatus("Pair failed");
+                conn.Text = "pair failed";
+
+            }
+        }
+        */
+        private void ClientConnectThread()
+        {
+            BluetoothClient sender = new BluetoothClient();
+            BluetoothAddress address = device.DeviceAddress;
+            //sender.SetPin(deviceInfo.DeviceAddress, myPin);
+            var endPoint = new BluetoothEndPoint(address, uId);
+            sender.Connect(endPoint);
+
+            //Another way that I've tried
+            BluetoothClient client = new BluetoothClient();
+            //UpdateStatus("Attempting connect");
+            client.Connect(device.DeviceAddress, uId);
+            client.BeginConnect(device.DeviceAddress, uId, this.BluetoothClientConnectCallback, client);
+        }
+
+        void BluetoothClientConnectCallback(IAsyncResult result)
+        {
+            BluetoothClient senderE = (BluetoothClient)result.AsyncState;
+            senderE.EndConnect(result);
+
+            conn.Text = "connected";
+            Stream stream = senderE.GetStream();
+            
+            while (true)
+            {
+                /*
+                while (!ready) ;
+                byte[] message = Encoding.ASCII.GetBytes(txtSenderMessage.Text);
+
+                stream.Write(message, 0, message.Length);
+                */
+            }
+            
+        }
+
     }
+
+
 }
