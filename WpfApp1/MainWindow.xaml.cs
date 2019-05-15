@@ -62,10 +62,7 @@ namespace WpfApp1
 
             BluetoothClient _cli = new BluetoothClient();
             items = new List<string>();
-
-
-            //return;
-
+            
             if (device == null)
             {
 
@@ -109,14 +106,9 @@ namespace WpfApp1
             device = devices[list.SelectedIndex];
             dev.Text = device.DeviceName;
             //AttemptConnect();
-
-            //UpdateStatus(deviceInfo.DeviceName + " was selected, attempting connect");
-
+            
             if (CanPair())
             {
-                //UpdateStatus("Device paired..");
-                //UpdateStatus("Starting connect thread");
-
                 conn.Text = "attempting pairing...";
                 Thread senderThread = new Thread(new ThreadStart(ClientConnectThread));
                 senderThread.Start();
@@ -141,40 +133,30 @@ namespace WpfApp1
             }
             return true;
         }
-/*
-        private void LstAvailableDevices_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            device = devices[list.SelectedIndex];
-            //UpdateStatus(deviceInfo.DeviceName + " was selected, attempting connect");
 
-            if (CanPair())
-            {
-                //UpdateStatus("Device paired..");
-                //UpdateStatus("Starting connect thread");
-
-                conn.Text = "attempting pairing...";
-                Thread senderThread = new Thread(new ThreadStart(ClientConnectThread));
-                senderThread.Start();
-            }
-            else
-            {
-                //UpdateStatus("Pair failed");
-                conn.Text = "pair failed";
-
-            }
-        }
-        */
         private void ClientConnectThread()
         {
             BluetoothClient sender = new BluetoothClient();
             BluetoothAddress address = device.DeviceAddress;
             //sender.SetPin(deviceInfo.DeviceAddress, myPin);
             var endPoint = new BluetoothEndPoint(address, uId);
-            sender.Connect(endPoint);
 
-            //Another way that I've tried
+            try
+            {
+                if (!sender.Connected)
+                {
+                    sender.Connect(endPoint);
+                }
+            }
+            catch (System.Net.Sockets.SocketException e)
+            {
+                sender.Close();
+                //conn.Text = "not connected";
+
+                return;
+            }
+            
             BluetoothClient client = new BluetoothClient();
-            //UpdateStatus("Attempting connect");
             client.Connect(device.DeviceAddress, uId);
             client.BeginConnect(device.DeviceAddress, uId, this.BluetoothClientConnectCallback, client);
         }
