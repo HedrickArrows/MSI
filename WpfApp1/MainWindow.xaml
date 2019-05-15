@@ -1,0 +1,33 @@
+﻿<Window x:Class="WpfApp1.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WpfApp1"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="603.738">
+    <Grid>
+        <TextBlock Text="Found devices" FontSize="18" Margin="33,0,432,388"/>
+        <ListView Margin="33,31,64,99" MouseDoubleClick="List_MouseDoubleClick"
+        Name="list"/>
+        <TextBlock Name="conn" Margin="366,361,93,23" 
+                   RenderTransformOrigin="0.5,0.5"
+                   FontSize="18"
+                   Text="---"/>
+        <TextBlock Name="dev" Margin="366,319,93,65" 
+                   RenderTransformOrigin="0.5,0.5"
+                   FontSize="18"
+                   Text="---"/>
+        <TextBlock Margin="241,360,152,23" 
+                   RenderTransformOrigin="0.5,0.5"
+                   FontSize="18"
+                   Text="Status:"/>
+        <TextBlock Margin="241,319,152,64" 
+                   RenderTransformOrigin="0.5,0.5"
+                   FontSize="18"
+                   Text="Device:"/>
+        <Button Click="Button_Click" Margin="33,349,421,39">
+            <TextBlock Text="Refresh" Width="66" FontSize="18"></TextBlock>
+        </Button>
+    </Grid>
+</Window>
