@@ -42,10 +42,24 @@ namespace WpfApp1
         public MainWindow()
         {
 
+            try
+            {
+                endPoint = new BluetoothEndPoint(BluetoothRadio.PrimaryRadio.LocalAddress,
+                    BluetoothService.BluetoothBase);
+            } catch (Exception e) {
+                System.Windows.Forms.MessageBox.Show("Please enable Bluetooth before using this application");
 
-            endPoint = new BluetoothEndPoint(BluetoothRadio.PrimaryRadio.LocalAddress, 
-                BluetoothService.BluetoothBase);
-
+                if (System.Windows.Forms.Application.MessageLoop)
+                {
+                    // WinForms app
+                    System.Windows.Forms.Application.Exit();
+                }
+                else
+                {
+                    // Console app
+                    System.Environment.Exit(1);
+                }
+            }
             client = new BluetoothClient(endPoint);
 
             InitializeComponent();
