@@ -8,7 +8,7 @@
         Title="MainWindow" Height="450" Width="603.738">
     <Grid>
         <TextBlock Text="Found devices" FontSize="18" Margin="33,0,432,388"/>
-        <ListView Margin="33,31,64,99" MouseDoubleClick="List_MouseDoubleClick"
+        <ListView Margin="33,31,297,99" MouseDoubleClick="List_MouseDoubleClick"
         Name="list"/>
         <TextBlock Name="conn" Margin="366,361,10,23" 
                    RenderTransformOrigin="0.5,0.5"
@@ -29,5 +29,7 @@
         <Button Click="Button_Click" Margin="33,349,421,39">
             <TextBlock Text="Refresh" Width="66" FontSize="18"></TextBlock>
         </Button>
+        <TextBlock Text="Received data" FontSize="18" Margin="327,0,138,388"/>
+        <TextBlock Name="DataBox" Text="---" FontSize="18" Margin="327,31,22,105"/>
     </Grid>
 </Window>

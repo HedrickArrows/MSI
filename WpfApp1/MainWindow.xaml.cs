@@ -3,8 +3,11 @@ using InTheHand.Net.Bluetooth;
 using InTheHand.Net.Sockets;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,8 +34,19 @@ namespace WpfApp1
         public List<string> items;
         public List<BluetoothDeviceInfo> devices;
         BluetoothDeviceInfo device;
+        private static BluetoothClient client;
+        private static NetworkStream stream = null;
+        
+        private static BluetoothEndPoint endPoint;
+
         public MainWindow()
         {
+
+
+            endPoint = new BluetoothEndPoint(BluetoothRadio.PrimaryRadio.LocalAddress, 
+                BluetoothService.BluetoothBase);
+
+            client = new BluetoothClient(endPoint);
 
             InitializeComponent();
 
@@ -41,8 +55,8 @@ namespace WpfApp1
 
         public void Refresh() {
             items = new List<string>();
-            BluetoothClient _cli = new BluetoothClient();
-            devices = _cli.DiscoverDevicesInRange().ToList();
+            client = new BluetoothClient(endPoint);
+            devices = client.DiscoverDevicesInRange().ToList();
 
             foreach (BluetoothDeviceInfo d in devices)
             {
@@ -52,7 +66,7 @@ namespace WpfApp1
             list.ItemsSource = items;
         }
 
-
+        /*
         public void AttemptConnect()
         {
             device = devices[list.SelectedIndex];
@@ -61,7 +75,7 @@ namespace WpfApp1
             var serviceClass = BluetoothService.SerialPort;
 
             BluetoothClient _cli = new BluetoothClient();
-            items = new List<string>();
+            //items = new List<string>();
             
             if (device == null)
             {
@@ -95,7 +109,7 @@ namespace WpfApp1
             else
                 conn.Text = "connected";
         }
-
+        */
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             Refresh();
@@ -106,17 +120,40 @@ namespace WpfApp1
             device = devices[list.SelectedIndex];
             dev.Text = device.DeviceName;
             //AttemptConnect();
-            
+
+            conn.Text = "Attempting pairing...";
+
             if (CanPair())
             {
-                conn.Text = "attempting pairing...";
-                Thread senderThread = new Thread(new ThreadStart(ClientConnectThread));
-                senderThread.Start();
+
+                BluetoothAddress address = device.DeviceAddress;
+                //endPoint = new BluetoothEndPoint(address, BluetoothService.BluetoothBase);
+                client = new BluetoothClient(endPoint);
+
+                conn.Text = "Estabilishing connection...";
+
+
+                try
+                {
+                    client.BeginConnect(endPoint, new AsyncCallback(Connect), device);
+                }
+                catch (Exception exc)
+                {
+                    client.Close();
+                    Dispatcher.Invoke(() => {
+                        conn.Text = "Connection failed";
+                    });
+                    Debug.WriteLine(exc.ToString());
+                    return;
+                }
+
+               
+
             }
             else
             {
                 //UpdateStatus("Pair failed");
-                conn.Text = "pair failed";
+                conn.Text = "Connection failed";
 
             }
         }
@@ -126,14 +163,75 @@ namespace WpfApp1
         {
             if (!device.Authenticated)
             {
-                if (!BluetoothSecurity.PairRequest(device.DeviceAddress, ""))
+                if (!BluetoothSecurity.PairRequest(device.DeviceAddress, null))
                 {
                     return false;
                 }
             }
+            client.SetPin(null);
             return true;
         }
 
+        void Connect(IAsyncResult result)
+        {
+
+
+            if (result.IsCompleted)
+            {
+                Dispatcher.Invoke(() => {
+                    conn.Text = "Connected";
+                } );
+
+                stream = client.GetStream(); //powinno być połączone
+                        //ale może sypać wyjątkiem że socket nie jest połączony
+
+                if (stream.CanRead)
+                {
+                    byte[] myReadBuffer = new byte[1024];
+                    StringBuilder myCompleteMessage = new StringBuilder();
+                    int numberOfBytesRead = 0;
+
+                    // Incoming message may be larger than the buffer size. 
+                    do
+                    {
+                        numberOfBytesRead = stream.Read(myReadBuffer, 0, myReadBuffer.Length);
+
+                        for (int i = 0; i < numberOfBytesRead; i++)
+                            myCompleteMessage.AppendFormat("0x{0:X2} ", myReadBuffer[i]);
+                    }
+                    while (stream.DataAvailable);
+
+                    // Print out the received message to the console.
+                    //Console.WriteLine("You received the following message : " + myCompleteMessage);
+                    Dispatcher.Invoke(() => {
+                        DataBox.Text = myCompleteMessage.ToString();
+                    });
+                }
+                else
+                {
+                    Dispatcher.Invoke(() => {
+                        DataBox.Text = "Sorry.  \nYou cannot read \nfrom this NetworkStream";
+                    });
+                    //Console.WriteLine("Sorry.  You cannot read from this NetworkStream.");
+                }
+                /*
+                int time = 0;
+                while (true) {
+                    if (time++ > 10000000000)
+                        break;
+                    //zastąpić kodem komunikacji
+                }
+                */
+                // client is connected now :)
+            }
+
+
+            Dispatcher.Invoke(() => {
+                conn.Text = "Connection ended";
+            });
+        }
+
+        /*
         private void ClientConnectThread()
         {
             BluetoothClient sender = new BluetoothClient();
@@ -176,11 +274,11 @@ namespace WpfApp1
                 byte[] message = Encoding.ASCII.GetBytes(txtSenderMessage.Text);
 
                 stream.Write(message, 0, message.Length);
-                */
+                /
             }
             
         }
-
+        */
     }
 
 
