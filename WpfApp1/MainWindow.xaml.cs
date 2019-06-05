@@ -79,51 +79,7 @@ namespace WpfApp1
 
             list.ItemsSource = items;
         }
-
-        /*
-        public void AttemptConnect()
-        {
-            device = devices[list.SelectedIndex];
-            bool _isConnected = false;
-
-            var serviceClass = BluetoothService.SerialPort;
-
-            BluetoothClient _cli = new BluetoothClient();
-            //items = new List<string>();
-            
-            if (device == null)
-            {
-
-                conn.Text = "not found";
-                return;
-            }
-
-            var ep = new BluetoothEndPoint(device.DeviceAddress, serviceClass);
-
-            try
-            {
-                if (!device.Connected)
-                {
-                    _cli.Connect(ep);
-                }
-            }
-            catch (System.Net.Sockets.SocketException e)
-            {
-                _cli.Close();
-                _isConnected = false;
-                conn.Text = "not connected";
-
-                return;
-            }
-
-            _isConnected = true;
-
-            if (!_isConnected)
-                conn.Text = "not connected";
-            else
-                conn.Text = "connected";
-        }
-        */
+        
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             Refresh();
@@ -195,10 +151,17 @@ namespace WpfApp1
                 Dispatcher.Invoke(() => {
                     conn.Text = "Connected";
                 } );
-
-                stream = client.GetStream(); //powinno być połączone
-                        //ale może sypać wyjątkiem że socket nie jest połączony
-
+                try
+                {
+                    stream = client.GetStream(); //powinno być połączone
+                                                 //ale może sypać wyjątkiem że socket nie jest połączony
+                }
+                catch (Exception e) {
+                    Dispatcher.Invoke(() => {
+                        conn.Text = "Stream handler error";
+                    });
+                    return;
+                }
                 if (stream.CanRead)
                 {
                     byte[] myReadBuffer = new byte[1024];
@@ -245,54 +208,6 @@ namespace WpfApp1
             });
         }
 
-        /*
-        private void ClientConnectThread()
-        {
-            BluetoothClient sender = new BluetoothClient();
-            BluetoothAddress address = device.DeviceAddress;
-            //sender.SetPin(deviceInfo.DeviceAddress, myPin);
-            var endPoint = new BluetoothEndPoint(address, uId);
-
-            try
-            {
-                if (!sender.Connected)
-                {
-                    sender.Connect(endPoint);
-                }
-            }
-            catch (System.Net.Sockets.SocketException e)
-            {
-                sender.Close();
-                //conn.Text = "not connected";
-
-                return;
-            }
-            
-            BluetoothClient client = new BluetoothClient();
-            client.Connect(device.DeviceAddress, uId);
-            client.BeginConnect(device.DeviceAddress, uId, this.BluetoothClientConnectCallback, client);
-        }
-
-        void BluetoothClientConnectCallback(IAsyncResult result)
-        {
-            BluetoothClient senderE = (BluetoothClient)result.AsyncState;
-            senderE.EndConnect(result);
-
-            conn.Text = "connected";
-            Stream stream = senderE.GetStream();
-            
-            while (true)
-            {
-                /*
-                while (!ready) ;
-                byte[] message = Encoding.ASCII.GetBytes(txtSenderMessage.Text);
-
-                stream.Write(message, 0, message.Length);
-                /
-            }
-            
-        }
-        */
     }
 
 
